@@ -1,104 +1,55 @@
 # Secura AI
 
-Local-first VS Code extension for detecting hardcoded secrets and applying reviewable one-click remediation.
+Security companion for developers: a VS Code/Cursor extension plus a live web platform that scans linked repositories for hardcoded secrets.
 
-## What this MVP includes
+## Product surfaces
 
-- Deterministic local detection for:
+| Surface | What it does |
+| --- | --- |
+| **VS Code / Cursor extension** | Local secret detection, one-click remediation, dashboard, Insights terminal |
+| **Live web platform** (`web/`) | Login → link GitHub/local repo → scan modified files → review findings |
+| **AI fluency triage** (`demo/`) | Alert → grounded triage card (issue, location, intent, reasoning, actions) |
+
+## Features
+
+- Detects:
   - OpenAI API keys
   - GitHub tokens
   - AWS access key IDs
   - Password-like hardcoded assignments
-- Risk explanation for each finding with redacted value previews.
-- One-click remediation that:
-  - Replaces the literal with `process.env.<VAR_NAME>`
-  - Adds/updates `.env`
-  - Adds/updates `.env.example`
-  - Ensures `.env` is ignored in `.gitignore`
-- Local redacted audit trail and VS Code dashboard.
+- Explains risk with redacted previews
+- One-click remediation (extension):
+  - Replaces literal with `process.env.<VAR_NAME>`
+  - Updates `.env`, `.env.example`, `.gitignore`
+- Web platform findings: file path, line, severity, explanation
+- AI fluency triage: intent, context used, MITRE mapping, next actions, confidence
 
 ## Security boundaries
 
-- Detection and remediation previews run locally in the extension host.
-- Secret values are never sent to external AI services.
-- This hackathon MVP uses local workspace files as the secret store (`.env`).
-- Use fake secrets only in demos and tests.
+- Extension detection/remediation runs locally in the editor host
+- Secret values are not sent to external AI services by the extension
+- Web/Vercel scanning reads public GitHub file contents (or local git files when running `npm run web`)
+- Use fake secrets only in demos and tests
 
-## Installation guide
+---
 
-### Option A: Install from VSIX (recommended for testing)
+## Quick start
 
-1. Build the package:
-
-```powershell
-npm install
-npm run package
-```
-
-2. Install in VS Code:
-   - Open Command Palette -> **Extensions: Install from VSIX...**
-   - Select `secura-ai-0.0.1.vsix`
-
-Or install from terminal:
-
-```powershell
-code --install-extension "C:\Users\nikhi\Documents\Codex\2026-07-19\n\secura-ai-0.0.1.vsix"
-```
-
-3. Install in Cursor:
-   - Open Command Palette -> **Extensions: Install from VSIX...**
-   - Select `secura-ai-0.0.1.vsix`
-   - Reload Cursor if prompted
-
-### Option B: Run as extension under development
-
-```powershell
+```bash
 npm install
 npm run compile
 ```
 
-Open this folder in VS Code or Cursor and press `F5` to launch an Extension Development Host.
+### Demo login (web)
 
-## Running guide
+- Email: `demo@secura.ai`
+- Password: `secura123`
 
-1. Open any JS/TS file (or `demo/app.js`) with fake secret values.
-2. Save the file to trigger auto-scan for git-modified files.
-3. Check diagnostics in the editor for Secura findings.
-4. Use the lightbulb quick fix: **Fix with Secura (...)**.
-5. Review and approve the remediation preview.
-6. Confirm updates in:
-   - source file (`process.env.<VAR>`)
-   - `.env`
-   - `.env.example`
-   - `.gitignore`
-7. Open command: **Secura: Open security dashboard**.
+---
 
-## Scan modified files
+## 1) Live web platform (local)
 
-Use command palette: **Secura: Scan modified files for security issues**.
-
-- Secura reads `git status --porcelain`.
-- It scans modified JS/TS files in the current repository.
-- It also auto-scans on save, but only for files currently marked as git-modified.
-- Findings are surfaced as editor diagnostics and shown in the dashboard.
-- Status bar shows last scan result (`files scanned` and `open findings`) and can be clicked to run a manual scan.
-
-## Insights terminal
-
-Use command palette: **Secura: Open insights terminal**.
-
-- Opens a dedicated terminal tab named `Secura Insights`.
-- Logs scan/fix summaries with:
-  - scanned file count
-  - open findings
-  - total detected and fixed findings
-  - current security score
-
-## Live web platform
-
-Run the Secura web app (login → link repo → scan modified files):
-
-```powershell
+```bash
 npm run web
 ```
 
@@ -106,126 +57,166 @@ Open [http://localhost:3000](http://localhost:3000)
 
 If port `3000` is busy:
 
-```powershell
+```bash
 npm run web -- --port=3001
 ```
 
-Demo login:
-- Email: `demo@secura.ai`
-- Password: `secura123`
-
 Flow:
-1. Log in
+
+1. Log in with demo credentials
 2. Link a repository
+   - Local: filesystem git path
+   - Cloud/Vercel: GitHub URL such as `https://github.com/nikhilpktcr/securaAI`
 3. Click **Scan modified files**
-4. Review issue location, severity, and explanation
+4. Review findings (issue + location)
 
-### Deploy to Vercel
+TypeScript APIs live in:
 
-The `web/` app is Vercel-ready with **TypeScript serverless APIs** (`web/api/*.ts`) + static UI.
+- `web/api/*.ts`
+- `web/lib/*.ts`
 
-1. Install/login once:
+---
 
-```powershell
+## 2) Deploy web platform to Vercel
+
+1. Login:
+
+```bash
 npx vercel login
 ```
 
-2. Deploy from the `web` folder (Root Directory = `web`):
+2. Deploy (`web` is the project root):
 
-```powershell
+```bash
 npx vercel --cwd web
 ```
 
-Production deploy:
+Production:
 
-```powershell
+```bash
 npm run deploy:web
 ```
 
 Or in the Vercel dashboard:
-- Import `nikhilpktcr/securaAI`
-- Set **Root Directory** to `web`
-- Deploy
 
-Optional env vars in Vercel Project Settings:
-- `SESSION_SECRET` = long random string
-- `GITHUB_TOKEN` = GitHub PAT (for private repos / higher rate limits)
+1. Import `nikhilpktcr/securaAI`
+2. Set **Root Directory** to `web`
+3. Deploy
 
-On Vercel, link a **public GitHub URL** (example: `https://github.com/nikhilpktcr/securaAI`).
+Optional environment variables:
 
-## Hackathon AI triage demo
+| Name | Purpose |
+| --- | --- |
+| `SESSION_SECRET` | Cookie signing secret |
+| `GITHUB_TOKEN` | Private repos / higher GitHub API rate limits |
 
-This repo now includes a lightweight web demo for the "Alert -> AI Triage Card" flow.
+On Vercel, link a **public GitHub URL** (local filesystem paths are not available in serverless).
 
-1. Set your API key:
+---
 
-```powershell
-$env:OPENAI_API_KEY="your_key_here"
+## 3) VS Code / Cursor extension
+
+### Install from VSIX
+
+```bash
+npm install
+npm run package
 ```
 
-2. Start the demo server:
+Then: Command Palette → **Extensions: Install from VSIX...** → select `secura-ai-0.0.1.vsix`
 
-```powershell
-npm run demo:triage
+### Run in development
+
+```bash
+npm install
+npm run compile
 ```
 
-Single-command launcher (prints Secura Insights lines + starts triage app):
+Open this folder and press `F5` (Extension Development Host).
 
-```powershell
-npm run app
-```
+### Extension usage
 
-If port `8787` is busy, run on a different port:
+1. Open a JS/TS file with a fake secret (for example `demo/app.js`)
+2. Save / run **Secura: Scan modified files for security issues**
+3. Use lightbulb quick fix: **Fix with Secura (...)**
+4. Open **Secura: Open security dashboard**
+5. Open **Secura: Open insights terminal** for score + link to detailed triage
 
-```powershell
-$env:PORT=8788
-npm run demo:triage
-```
+Insights terminal points to the AI fluency page when findings are open:
 
-Universal fallback (works across shells/interop):
+`Detailed error: please go to http://localhost:8789.`
 
-```powershell
-npm run demo:triage -- --port=8788
-```
+---
 
-You can also override port with the app launcher:
+## 4) AI fluency triage demo
 
-```powershell
+```bash
 npm run app -- --port=8789
 ```
 
-3. Open [http://localhost:8787](http://localhost:8787), paste an alert, and click **Generate Triage Card**.
+Open [http://localhost:8789](http://localhost:8789)
 
-The card returns:
-- what happened
-- why it matters
-- severity
-- top 3 next actions
-- confidence score
+- Works locally without an API key (grounded finding details)
+- Optional LLM enrichment:
+
+```bash
+export OPENAI_API_KEY="sk-..."
+npm run app -- --port=8789
+```
+
+Port busy? Free it or pick another:
+
+```bash
+# Git Bash
+netstat -ano | rg ":8789"
+taskkill //PID <pid> //F
+
+# Or
+npm run app -- --port=8790
+```
+
+Triage card includes:
+
+- Issue found + location
+- Understood intent
+- AI reasoning + context used
+- MITRE tactic
+- Top 3 actions
+- Confidence / fluency score
+
+---
+
+## Scripts
+
+| Script | Description |
+| --- | --- |
+| `npm run compile` | Compile extension TypeScript |
+| `npm run compile:web` | Install/build web TypeScript libs |
+| `npm run web` | Start local web platform on port 3000 |
+| `npm run app` | Start AI fluency triage demo |
+| `npm run demo:triage` | Start triage server only |
+| `npm run package` | Build VSIX |
+| `npm test` | Run tests |
+| `npm run deploy:web` | Deploy `web/` to Vercel production |
+
+---
 
 ## Verification
 
-```powershell
+```bash
 npm test
 ```
 
-## Future scope
+---
 
-- Today (MVP): deterministic, developer-safe security companion inside the editor.
-- Future scope: an AI agent becomes an optional copilot for secret classification, remediation suggestions, and policy guidance.
-- Why phased: teams adopt AI gradually, so trust is built first through transparent, local-first behavior.
+## Demo script (hackathon)
 
-Pitch line:
+1. Show extension scan + quick fix on `demo/app.js`
+2. Open Insights terminal (score + detail URL)
+3. Run `npm run web` → login → link repo → scan findings
+4. Open `http://localhost:8789` for AI fluency triage card
+5. (Optional) Deploy `web/` to Vercel and scan a public GitHub repo
 
-> "Secura starts as a reliable security companion developers trust today, and evolves into an AI security agent as teams become ready to delegate more decisions."
+Pitch:
 
-## Demo script (hackathon flow)
-
-1. Open `demo/app.js` (or another JS/TS file with fake secrets).
-2. Wait for Secura diagnostics to appear.
-3. Trigger the lightbulb quick-fix: **Fix with Secura**.
-4. Review the remediation preview and confirm.
-5. Show:
-   - Source replacement to `process.env.<VAR>`
-   - Updated `.env`, `.env.example`, `.gitignore`
-   - Dashboard audit trail via command **Secura: Open security dashboard**.
+> Secura starts as a trusted local security companion, then becomes an AI-fluent platform that links repos, explains risk, and guides remediation.
