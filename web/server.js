@@ -9,6 +9,7 @@ const {
   destroySession
 } = require("./dist/lib/session");
 const { normalizeRepoInput, ensureRemoteRepo, scanModifiedFiles } = require("./dist/lib/scan");
+const { parseGitHubRepo, scanGitHubRepo } = require("./dist/lib/github");
 
 function resolvePort() {
   const args = process.argv.slice(2);
@@ -154,7 +155,29 @@ const server = http.createServer(async (req, res) => {
       if (!session) return sendJson(res, 401, { error: "Not authenticated." });
 
       const body = await readBody(req);
-      const normalized = normalizeRepoInput(body.repo);
+      const input = String(body.repo || "").trim();
+
+      // GitHub URLs: metadata only (scan via GitHub API). Avoid git clone on Vercel.
+      try {
+        const parsed = parseGitHubRepo(input);
+        session.repo = {
+          input,
+          owner: parsed.owner,
+          name: parsed.name,
+          source: "github",
+          linkedAt: new Date().toISOString()
+        };
+        session.lastScan = null;
+        return sendJson(res, 200, { ok: true, repo: session.repo });
+      } catch (_githubErr) {
+        if (process.env.VERCEL) {
+          return sendJson(res, 400, {
+            error: "On Vercel, link a public GitHub URL like https://github.com/owner/repo"
+          });
+        }
+      }
+
+      const normalized = normalizeRepoInput(input);
       let localPath = normalized.path;
       let source = "local";
 
@@ -164,7 +187,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       session.repo = {
-        input: String(body.repo).trim(),
+        input,
         localPath,
         source,
         linkedAt: new Date().toISOString()
@@ -177,16 +200,26 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && req.url === "/api/scan") {
       const session = getSession(req);
       if (!session) return sendJson(res, 401, { error: "Not authenticated." });
-      if (!session.repo?.localPath) {
+      if (!session.repo) {
         return sendJson(res, 400, { error: "Link a repository before scanning." });
       }
 
-      const result = await scanModifiedFiles(session.repo.localPath);
+      let result;
+      if (session.repo.owner && session.repo.name) {
+        result = await scanGitHubRepo(session.repo, process.env.GITHUB_TOKEN);
+      } else if (session.repo.localPath) {
+        result = await scanModifiedFiles(session.repo.localPath);
+      } else {
+        return sendJson(res, 400, { error: "Link a repository before scanning." });
+      }
+
       session.lastScan = result;
       return sendJson(res, 200, {
         ok: true,
         scan: {
           scannedAt: result.scannedAt,
+          mode: result.mode,
+          commitSha: result.commitSha,
           stats: result.stats,
           findings: result.findings,
           scannedFiles: result.scannedFiles

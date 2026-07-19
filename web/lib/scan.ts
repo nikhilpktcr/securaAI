@@ -1,5 +1,6 @@
 import { execFile } from "child_process";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { promisify } from "util";
 import { detectSecrets } from "./detectors";
@@ -183,7 +184,19 @@ export function normalizeRepoInput(input: string): { type: "remote"; url: string
 }
 
 export async function ensureRemoteRepo(url: string, cacheDir: string): Promise<string> {
-  fs.mkdirSync(cacheDir, { recursive: true });
+  // Vercel serverless FS is read-only (except /tmp). Never clone into the deploy bundle.
+  if (process.env.VERCEL) {
+    throw new Error(
+      "Git clone is not available on Vercel. Link a public GitHub URL and use the GitHub API scan path."
+    );
+  }
+
+  // Prefer an explicit writable cache; never mkdir inside the app bundle.
+  const resolvedCache = cacheDir.startsWith(os.tmpdir())
+    ? cacheDir
+    : path.join(os.tmpdir(), "secura-repos");
+
+  fs.mkdirSync(resolvedCache, { recursive: true });
   const slug = url
     .replace(/\.git$/i, "")
     .split("/")
@@ -191,7 +204,7 @@ export async function ensureRemoteRepo(url: string, cacheDir: string): Promise<s
     .slice(-2)
     .join("-")
     .replace(/[^\w.-]+/g, "_");
-  const target = path.join(cacheDir, slug || "repo");
+  const target = path.join(resolvedCache, slug || "repo");
 
   if (fs.existsSync(path.join(target, ".git"))) {
     try {
