@@ -110,11 +110,29 @@ $env:OPENAI_API_KEY="your_key_here"
 npm run demo:triage
 ```
 
+Single-command launcher (prints Secura Insights lines + starts triage app):
+
+```powershell
+npm run app
+```
+
 If port `8787` is busy, run on a different port:
 
 ```powershell
 $env:PORT=8788
 npm run demo:triage
+```
+
+Universal fallback (works across shells/interop):
+
+```powershell
+npm run demo:triage -- --port=8788
+```
+
+You can also override port with the app launcher:
+
+```powershell
+npm run app -- --port=8789
 ```
 
 3. Open [http://localhost:8787](http://localhost:8787), paste an alert, and click **Generate Triage Card**.

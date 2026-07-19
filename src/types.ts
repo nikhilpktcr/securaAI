@@ -25,6 +25,12 @@ export type FindingSnapshot = {
   severity: SecretSeverity;
   secretType: string;
   fileName: string;
+  filePath: string;
+  line: number;
+  character: number;
+  message: string;
+  explanation: string;
+  envVarName: string;
 };
 
 export type AuditAction = "scan" | "remediation";

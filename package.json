@@ -40,7 +40,8 @@
     "watch": "tsc -watch -p .",
     "package": "vsce package",
     "test": "npm run compile && node --test test/**/*.test.cjs",
-    "demo:triage": "node demo/triage-server.js"
+    "demo:triage": "node demo/triage-server.js",
+    "app": "node demo/run-app.js"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

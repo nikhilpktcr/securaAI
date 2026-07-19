@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Secura AI - Alert Triage Card</title>
+    <title>Secura AI Fluency - Triage Card</title>
     <style>
       :root {
         color-scheme: dark;
@@ -21,14 +21,14 @@
 
       body {
         margin: 0;
-        font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+        font-family: "Segoe UI", Roboto, Arial, sans-serif;
         background: radial-gradient(circle at top, #1a2a55 0%, var(--bg) 45%);
         color: var(--text);
       }
 
       .wrap {
-        max-width: 900px;
-        margin: 42px auto;
+        max-width: 920px;
+        margin: 36px auto;
         padding: 0 20px;
       }
 
@@ -44,13 +44,25 @@
         font-size: 26px;
       }
 
+      .badge {
+        display: inline-block;
+        margin-bottom: 10px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #243968;
+        color: #b8d0ff;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
       p {
         color: var(--muted);
       }
 
       textarea {
         width: 100%;
-        min-height: 190px;
+        min-height: 150px;
         border-radius: 10px;
         border: 1px solid #3650a3;
         background: #0d1430;
@@ -102,6 +114,7 @@
       .value {
         margin-top: 4px;
         font-size: 15px;
+        word-break: break-word;
       }
 
       .sev {
@@ -126,27 +139,68 @@
         color: #ff99a4;
       }
 
-      ol {
+      ol,
+      ul {
         margin: 6px 0 0 20px;
         padding: 0;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      @media (max-width: 720px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
   <body>
     <div class="wrap">
       <div class="panel">
-        <h1>Secura AI - Alert Triage Card</h1>
-        <p>Paste one raw alert/log and generate a structured triage response.</p>
-        <textarea id="alertText" placeholder="Paste suspicious alert here...">
-{"timestamp":"2026-07-19T10:42:10Z","source":"SIEM","rule":"Multiple failed logins from unusual geo","user":"admin@secura.local","ip":"185.220.101.12","failed_attempts":27}
-        </textarea>
+        <div class="badge" id="modeBadge">AI Fluency Triage</div>
+        <h1>Secura AI Fluency</h1>
+        <p>
+          Understands intent, uses grounded finding context, explains risk, and recommends actions.
+          Works locally without an API key; uses LLM enrichment when <code>OPENAI_API_KEY</code> is set.
+        </p>
+        <textarea id="alertText" placeholder="Finding details load automatically..."></textarea>
         <br />
-        <button id="runBtn">Generate Triage Card</button>
-        <div id="status" class="status"></div>
+        <button id="runBtn">Run AI Fluency Triage</button>
+        <div id="status" class="status">Loading open findings...</div>
       </div>
 
       <div class="result" id="resultWrap">
         <div class="card">
+          <div class="row">
+            <div class="label">Issue Found</div>
+            <div class="value" id="issueFound"></div>
+          </div>
+          <div class="row">
+            <div class="label">Location</div>
+            <div class="value" id="location"></div>
+          </div>
+          <div class="grid">
+            <div class="row">
+              <div class="label">Understood Intent</div>
+              <div class="value" id="intent"></div>
+            </div>
+            <div class="row">
+              <div class="label">MITRE Tactic</div>
+              <div class="value" id="mitre"></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="label">AI Reasoning</div>
+            <div class="value" id="reasoning"></div>
+          </div>
+          <div class="row">
+            <div class="label">Context Used</div>
+            <ul id="contextUsed"></ul>
+          </div>
           <div class="row">
             <div class="label">What Happened</div>
             <div class="value" id="summary"></div>
@@ -155,17 +209,19 @@
             <div class="label">Why It Matters</div>
             <div class="value" id="impact"></div>
           </div>
-          <div class="row">
-            <div class="label">Severity</div>
-            <div class="value"><span id="severity" class="sev"></span></div>
+          <div class="grid">
+            <div class="row">
+              <div class="label">Severity</div>
+              <div class="value"><span id="severity" class="sev"></span></div>
+            </div>
+            <div class="row">
+              <div class="label">Confidence / Fluency</div>
+              <div class="value"><span id="confidence"></span>% / <span id="fluency"></span></div>
+            </div>
           </div>
           <div class="row">
             <div class="label">Top 3 Next Actions</div>
             <ol id="actions"></ol>
-          </div>
-          <div class="row">
-            <div class="label">Confidence</div>
-            <div class="value"><span id="confidence"></span>%</div>
           </div>
         </div>
       </div>
@@ -173,38 +229,97 @@
 
     <script>
       const statusEl = document.getElementById("status");
+      const modeBadge = document.getElementById("modeBadge");
       const resultWrap = document.getElementById("resultWrap");
+      const issueFoundEl = document.getElementById("issueFound");
+      const locationEl = document.getElementById("location");
+      const intentEl = document.getElementById("intent");
+      const mitreEl = document.getElementById("mitre");
+      const reasoningEl = document.getElementById("reasoning");
+      const contextUsedEl = document.getElementById("contextUsed");
       const summaryEl = document.getElementById("summary");
       const impactEl = document.getElementById("impact");
       const severityEl = document.getElementById("severity");
       const actionsEl = document.getElementById("actions");
       const confidenceEl = document.getElementById("confidence");
+      const fluencyEl = document.getElementById("fluency");
       const runBtn = document.getElementById("runBtn");
       const alertTextEl = document.getElementById("alertText");
 
       function setLoadingState(isLoading) {
         runBtn.disabled = isLoading;
-        runBtn.textContent = isLoading ? "Analyzing..." : "Generate Triage Card";
+        runBtn.textContent = isLoading ? "Running AI fluency..." : "Run AI Fluency Triage";
       }
 
-      function renderTriage(triage) {
+      function renderTriage(triage, mode) {
+        issueFoundEl.textContent = triage.issue_found || "-";
+        locationEl.textContent = triage.location || "-";
+        intentEl.textContent = triage.intent || "-";
+        mitreEl.textContent = triage.mitre_tactic || "-";
+        reasoningEl.textContent = triage.reasoning || "-";
         summaryEl.textContent = triage.summary || "-";
         impactEl.textContent = triage.impact || "-";
         severityEl.textContent = triage.severity || "Medium";
         severityEl.className = "sev " + String(triage.severity || "Medium").toLowerCase();
-        actionsEl.innerHTML = "";
+        confidenceEl.textContent = String(triage.confidence ?? 50);
+        fluencyEl.textContent = String(triage.fluency_score ?? 80);
 
+        contextUsedEl.innerHTML = "";
+        (triage.context_used || []).forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          contextUsedEl.appendChild(li);
+        });
+
+        actionsEl.innerHTML = "";
         (triage.next_actions || []).forEach((item) => {
           const li = document.createElement("li");
           li.textContent = item;
           actionsEl.appendChild(li);
         });
 
-        confidenceEl.textContent = String(triage.confidence ?? 50);
+        if (mode === "ai-fluency-llm") {
+          modeBadge.textContent = "AI Fluency (LLM)";
+        } else if (mode === "ai-fluency-local-fallback") {
+          modeBadge.textContent = "AI Fluency (Local Fallback)";
+        } else {
+          modeBadge.textContent = "AI Fluency (Local Grounded)";
+        }
+
         resultWrap.style.display = "block";
       }
 
-      runBtn.addEventListener("click", async () => {
+      function findingToAlertText(finding) {
+        return [
+          `Issue: ${finding.message || finding.secretType}`,
+          `Location: ${finding.filePath}:${finding.line}:${finding.character}`,
+          `Type: ${finding.secretType}`,
+          `Severity: ${finding.severity}`,
+          `Explanation: ${finding.explanation || ""}`
+        ].join("\n");
+      }
+
+      async function loadOpenFindings() {
+        try {
+          const resp = await fetch("/findings");
+          const data = await resp.json();
+          const finding = (data.findings || [])[0];
+
+          if (!finding) {
+            statusEl.textContent = "No open findings yet. Run Secura scan, then refresh this page.";
+            alertTextEl.value = "Open findings: 0";
+            return;
+          }
+
+          alertTextEl.value = findingToAlertText(finding);
+          statusEl.textContent = `Loaded grounded finding from ${finding.fileName}. Running AI fluency...`;
+          await runTriage();
+        } catch (error) {
+          statusEl.textContent = "Could not load findings: " + error.message;
+        }
+      }
+
+      async function runTriage() {
         const alertText = alertTextEl.value.trim();
         if (!alertText) {
           statusEl.textContent = "Please paste an alert first.";
@@ -212,7 +327,7 @@
         }
 
         setLoadingState(true);
-        statusEl.textContent = "Running AI triage...";
+        statusEl.textContent = "Running AI fluency triage...";
 
         try {
           const resp = await fetch("/triage", {
@@ -226,14 +341,23 @@
             throw new Error(data.error || "Unknown error from backend.");
           }
 
-          renderTriage(data.triage);
-          statusEl.textContent = "Triage complete.";
+          renderTriage(data.triage, data.mode);
+          statusEl.textContent =
+            data.mode === "ai-fluency-llm"
+              ? "AI fluency complete (LLM enriched)."
+              : "AI fluency complete (local grounded).";
         } catch (error) {
           statusEl.textContent = "Failed: " + error.message;
         } finally {
           setLoadingState(false);
         }
+      }
+
+      runBtn.addEventListener("click", () => {
+        void runTriage();
       });
+
+      void loadOpenFindings();
     </script>
   </body>
 </html>

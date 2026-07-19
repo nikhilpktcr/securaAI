@@ -20,9 +20,30 @@ function flattenSnapshots(findings: Map<string, Finding[]>): FindingSnapshot[] {
       provider: item.provider,
       severity: item.severity,
       secretType: item.secretType,
-      fileName: fileNameOf(item.document)
+      fileName: fileNameOf(item.document),
+      filePath: item.document.uri.fsPath,
+      line: item.range.start.line + 1,
+      character: item.range.start.character + 1,
+      message: item.message,
+      explanation: item.explanation,
+      envVarName: item.envVarName
     }))
   );
+}
+
+async function persistFindingsForTriage(findings: Map<string, Finding[]>): Promise<void> {
+  const folder = vscode.workspace.workspaceFolders?.[0];
+  if (!folder) return;
+
+  const details = flattenSnapshots(findings);
+  const payload = {
+    updatedAt: new Date().toISOString(),
+    open: details.length,
+    findings: details
+  };
+
+  const outPath = vscode.Uri.joinPath(folder.uri, "demo", "latest-findings.json");
+  await vscode.workspace.fs.writeFile(outPath, Buffer.from(JSON.stringify(payload, null, 2), "utf8"));
 }
 
 function diagnosticSeverity(finding: Finding): vscode.DiagnosticSeverity {
@@ -116,6 +137,8 @@ function createInsightsTerminal(): InsightsTerminal {
     open: () => {
       writeEmitter.fire("Secura Insights\r\n");
       writeEmitter.fire("Local scan summary for developers.\r\n\r\n");
+      writeEmitter.fire("Detailed error: please go to http://localhost:8789.\r\n");
+      writeEmitter.fire("AI fluency triage: issue, location, intent, reasoning, actions.\r\n\r\n");
     },
     close: () => {
       writeEmitter.dispose();
@@ -129,6 +152,14 @@ function createInsightsTerminal(): InsightsTerminal {
       writeEmitter.fire(`${lines.join("\r\n")}\r\n\r\n`);
     }
   };
+}
+
+function withDetailedErrorLine(lines: string[]): string[] {
+  return [
+    ...lines,
+    "Detailed error: please go to http://localhost:8789.",
+    "AI fluency triage available at that URL (intent + context + actions)."
+  ];
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -164,14 +195,18 @@ export function activate(context: vscode.ExtensionContext): void {
     const label =
       mode === "manual" ? "Manual modified-file scan" : mode === "autosave" ? "Auto-save modified-file scan" : "Remediation applied";
     const terminal = getInsightsTerminal();
-    terminal.log([
-      `[${new Date().toLocaleTimeString()}] ${label}`,
-      `Scanned files: ${scannedFiles}`,
-      `Open findings: ${stats.open}`,
-      `Total findings detected: ${stats.found}`,
-      `Total findings fixed: ${stats.fixed}`,
-      `Security score: ${score}/100`
-    ]);
+    terminal.log(
+      withDetailedErrorLine(
+        [
+          `[${new Date().toLocaleTimeString()}] ${label}`,
+          `Scanned files: ${scannedFiles}`,
+          `Open findings: ${stats.open}`,
+          `Total findings detected: ${stats.found}`,
+          `Total findings fixed: ${stats.fixed}`,
+          `Security score: ${score}/100`
+        ]
+      )
+    );
   };
 
   const refresh = async (document: vscode.TextDocument): Promise<void> => {
@@ -189,6 +224,7 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     await recordScan(context, flattenSnapshots(findings));
+    await persistFindingsForTriage(findings);
   };
 
   const refreshModifiedSet = async (folder: vscode.WorkspaceFolder): Promise<void> => {
@@ -298,18 +334,34 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("secura.openInsightsTerminal", () => {
+    vscode.commands.registerCommand("secura.openInsightsTerminal", async () => {
       const terminal = getInsightsTerminal();
       terminal.terminal.show(false);
       const stats = getStats(context);
       const score = Math.max(0, 100 - stats.open * 20);
-      terminal.log([
-        `[${new Date().toLocaleTimeString()}] Insights terminal opened`,
-        `Open findings: ${stats.open}`,
-        `Total findings detected: ${stats.found}`,
-        `Total findings fixed: ${stats.fixed}`,
-        `Security score: ${score}/100`
-      ]);
+      await persistFindingsForTriage(findings);
+      const snapshots = flattenSnapshots(findings);
+      const first = snapshots[0];
+      const detailLines = first
+        ? [
+            `Issue: ${first.message}`,
+            `Location: ${first.filePath}:${first.line}:${first.character}`,
+            `Type: ${first.secretType} (${first.severity})`
+          ]
+        : ["Issue: No open finding details available."];
+
+      terminal.log(
+        withDetailedErrorLine(
+          [
+            `[${new Date().toLocaleTimeString()}] Insights terminal opened`,
+            `Open findings: ${stats.open}`,
+            `Total findings detected: ${stats.found}`,
+            `Total findings fixed: ${stats.fixed}`,
+            `Security score: ${score}/100`,
+            ...detailLines
+          ]
+        )
+      );
     })
   );
 

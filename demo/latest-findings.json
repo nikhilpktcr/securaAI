@@ -1,0 +1,18 @@
+{
+  "updatedAt": "2026-07-19T00:00:00.000Z",
+  "open": 1,
+  "findings": [
+    {
+      "provider": "openai",
+      "severity": "critical",
+      "secretType": "OpenAI API key",
+      "fileName": "app.js",
+      "filePath": "demo/app.js",
+      "line": 2,
+      "character": 27,
+      "message": "Secura: Hardcoded OpenAI API key detected.",
+      "explanation": "OpenAI keys grant direct API usage and can expose data or create billing abuse if committed.",
+      "envVarName": "OPENAI_API_KEY"
+    }
+  ]
+}
