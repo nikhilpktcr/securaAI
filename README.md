@@ -94,6 +94,65 @@ Use command palette: **Secura: Open insights terminal**.
   - total detected and fixed findings
   - current security score
 
+## Live web platform
+
+Run the Secura web app (login → link repo → scan modified files):
+
+```powershell
+npm run web
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+If port `3000` is busy:
+
+```powershell
+npm run web -- --port=3001
+```
+
+Demo login:
+- Email: `demo@secura.ai`
+- Password: `secura123`
+
+Flow:
+1. Log in
+2. Link a repository
+3. Click **Scan modified files**
+4. Review issue location, severity, and explanation
+
+### Deploy to Vercel
+
+The `web/` app is Vercel-ready with **TypeScript serverless APIs** (`web/api/*.ts`) + static UI.
+
+1. Install/login once:
+
+```powershell
+npx vercel login
+```
+
+2. Deploy from the `web` folder (Root Directory = `web`):
+
+```powershell
+npx vercel --cwd web
+```
+
+Production deploy:
+
+```powershell
+npm run deploy:web
+```
+
+Or in the Vercel dashboard:
+- Import `nikhilpktcr/securaAI`
+- Set **Root Directory** to `web`
+- Deploy
+
+Optional env vars in Vercel Project Settings:
+- `SESSION_SECRET` = long random string
+- `GITHUB_TOKEN` = GitHub PAT (for private repos / higher rate limits)
+
+On Vercel, link a **public GitHub URL** (example: `https://github.com/nikhilpktcr/securaAI`).
+
 ## Hackathon AI triage demo
 
 This repo now includes a lightweight web demo for the "Alert -> AI Triage Card" flow.

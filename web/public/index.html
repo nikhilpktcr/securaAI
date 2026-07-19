@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secura — Live Security Platform</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">Secura<span>.</span></div>
+        <div id="userSlot" class="muted"></div>
+      </header>
+
+      <section id="loginView" class="panel hero-panel">
+        <div class="brand">Secura<span>.</span></div>
+        <h1>Security analysis for every linked repo.</h1>
+        <p>Log in, connect a repository, and Secura scans modified files for hardcoded secrets and high-risk issues.</p>
+        <form id="loginForm" class="form">
+          <label>
+            Email
+            <input id="email" type="email" value="demo@secura.ai" required />
+          </label>
+          <label>
+            Password
+            <input id="password" type="password" value="secura123" required />
+          </label>
+          <button type="submit">Enter platform</button>
+          <div id="loginStatus" class="status"></div>
+        </form>
+      </section>
+
+      <section id="linkView" class="panel hidden">
+        <h2>Link a repository</h2>
+        <p class="muted" id="linkHelp">
+          Link a GitHub repository. Secura scans recently changed JS/TS files for security issues.
+        </p>
+        <form id="linkForm" class="form" style="max-width: 640px">
+          <label>
+            GitHub repository URL
+            <input
+              id="repoInput"
+              type="text"
+              placeholder="https://github.com/nikhilpktcr/securaAI"
+              required
+            />
+          </label>
+          <button type="submit">Link repository</button>
+          <div id="linkStatus" class="status"></div>
+        </form>
+      </section>
+
+      <section id="dashboardView" class="hidden">
+        <div class="grid">
+          <div class="panel">
+            <h2>Security workspace</h2>
+            <p class="muted" id="repoLabel"></p>
+            <div class="stats">
+              <div class="stat">
+                <span class="muted">Open issues</span>
+                <strong id="statOpen">0</strong>
+              </div>
+              <div class="stat">
+                <span class="muted">Files scanned</span>
+                <strong id="statFiles">0</strong>
+              </div>
+              <div class="stat">
+                <span class="muted">Score</span>
+                <strong id="statScore">100</strong>
+              </div>
+            </div>
+            <div class="actions">
+              <button id="scanBtn">Scan modified files</button>
+              <button id="relinkBtn" class="secondary" type="button">Change repo</button>
+              <button id="logoutBtn" class="secondary" type="button">Log out</button>
+            </div>
+            <p id="scanStatus" class="status" style="color: var(--muted); margin-top: 14px"></p>
+          </div>
+
+          <div class="panel">
+            <h2>Findings</h2>
+            <div id="findingsList"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script src="/app.js"></script>
+  </body>
+</html>

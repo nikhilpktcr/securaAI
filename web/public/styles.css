@@ -1,0 +1,255 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
+
+:root {
+  --ink: #0f1c24;
+  --muted: #4d6570;
+  --panel: rgba(255, 252, 247, 0.88);
+  --line: rgba(15, 28, 36, 0.12);
+  --accent: #0f7a6b;
+  --accent-soft: #d8f3ee;
+  --danger: #9b2c3a;
+  --warn: #9a6b12;
+  --ok: #176b45;
+  --shadow: 0 24px 60px rgba(15, 28, 36, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "DM Sans", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(15, 122, 107, 0.18), transparent 55%),
+    radial-gradient(900px 420px at 90% 0%, rgba(30, 84, 120, 0.14), transparent 50%),
+    linear-gradient(180deg, #edf4f6 0%, #f7f3ec 48%, #eef5f3 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image:
+    linear-gradient(rgba(15, 28, 36, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 28, 36, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 20px 56px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.brand {
+  font-family: "Fraunces", serif;
+  font-size: 28px;
+  letter-spacing: 0.02em;
+}
+
+.brand span {
+  color: var(--accent);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  padding: 28px;
+}
+
+.hero-panel {
+  min-height: calc(100vh - 120px);
+  display: grid;
+  align-content: center;
+  gap: 18px;
+}
+
+.hero-panel h1 {
+  font-family: "Fraunces", serif;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  line-height: 1.05;
+  margin: 0;
+  max-width: 12ch;
+}
+
+.hero-panel p {
+  margin: 0;
+  max-width: 48ch;
+  font-size: 1.05rem;
+  color: var(--muted);
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+  max-width: 420px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.92rem;
+}
+
+input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font: inherit;
+  background: #fffefb;
+  color: var(--ink);
+}
+
+button,
+.btn {
+  border: none;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #f7fbfa;
+  font: inherit;
+  font-weight: 700;
+  padding: 12px 18px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.status {
+  min-height: 1.2em;
+  color: var(--danger);
+  font-size: 0.92rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 18px;
+}
+
+@media (max-width: 860px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.stat {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  background: #fffefb;
+}
+
+.stat strong {
+  display: block;
+  font-family: "Fraunces", serif;
+  font-size: 1.7rem;
+  margin-top: 4px;
+}
+
+.finding {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  background: #fffefb;
+  margin-bottom: 12px;
+}
+
+.finding h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.chip.critical,
+.chip.high {
+  background: #f8e6e9;
+  color: var(--danger);
+}
+
+.chip.medium {
+  background: #fff1d6;
+  color: var(--warn);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86rem;
+  word-break: break-all;
+}
+
+.empty {
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  padding: 22px;
+  color: var(--muted);
+}

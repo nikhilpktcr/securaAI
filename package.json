@@ -41,7 +41,10 @@
     "package": "vsce package",
     "test": "npm run compile && node --test test/**/*.test.cjs",
     "demo:triage": "node demo/triage-server.js",
-    "app": "node demo/run-app.js"
+    "app": "node demo/run-app.js",
+    "web": "npm run compile:web && node web/server.js",
+    "compile:web": "npm install --prefix web && npm run build --prefix web",
+    "deploy:web": "npx vercel@latest --cwd web --prod"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
