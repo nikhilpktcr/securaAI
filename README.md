@@ -143,4 +143,4 @@ Open [http://localhost:3000](http://localhost:3000)
 | `npm run package` | Create the `.vsix` installer |
 | `npm run web` | Start the local web app |
 | `npm test` | Run tests |
-| `npm run deploy:web` | Deploy `web/` to Vercel |
+| `npm run test:smoke` | Extension smoke test (scan + package VSIX) |

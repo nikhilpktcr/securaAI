@@ -45,8 +45,7 @@
     "demo:triage": "node demo/triage-server.js",
     "app": "node demo/run-app.js",
     "web": "npm run compile:web && node web/server.js",
-    "compile:web": "npm run sync:shared && npm install --prefix web && npm run build --prefix web",
-    "deploy:web": "npx vercel@latest --cwd web --prod"
+    "compile:web": "npm run sync:shared && npm install --prefix web && npm run build --prefix web"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
