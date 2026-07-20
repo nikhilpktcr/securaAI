@@ -19,16 +19,32 @@
 
       <section id="loginView" class="panel hero-panel">
         <p class="free-badge">Free forever · No signup</p>
-        <div class="brand">Secura<span>.</span></div>
-        <h1>Security analysis for every linked repo.</h1>
-        <p>
-          Connect a public GitHub repository and Secura scans JS/TS files for hardcoded secrets and
-          high-risk issues — free for everyone.
+        <div class="brand hero-brand">Secura<span>.</span></div>
+        <h1>Catch hardcoded secrets before they ship.</h1>
+        <p class="hero-lead">
+          Secura is your free AI security companion. Paste a public GitHub repository, and it scans
+          JS/TS files for leaked credentials — with file, line, and risk explanations.
         </p>
-        <div class="hero-actions">
-          <button id="startFreeBtn" type="button">Start free</button>
-        </div>
-        <div id="loginStatus" class="status"></div>
+        <p class="hero-detects">
+          Detects OpenAI API keys, GitHub tokens, AWS access keys, and hardcoded passwords.
+        </p>
+
+        <form id="linkForm" class="form hero-form">
+          <label>
+            GitHub repository URL
+            <input
+              id="repoInput"
+              type="url"
+              placeholder="https://github.com/owner/repo"
+              required
+            />
+          </label>
+          <div class="hero-actions">
+            <button type="submit" id="startFreeBtn">Scan free</button>
+          </div>
+          <div id="linkStatus" class="status"></div>
+          <div id="loginStatus" class="status"></div>
+        </form>
       </section>
 
       <section id="linkView" class="panel hidden">
@@ -36,18 +52,18 @@
         <p class="muted" id="linkHelp">
           Paste any public GitHub repo URL. Secura scans recent JS/TS files for security issues.
         </p>
-        <form id="linkForm" class="form" style="max-width: 640px">
+        <form id="linkFormAlt" class="form" style="max-width: 640px">
           <label>
             GitHub repository URL
             <input
-              id="repoInput"
-              type="text"
+              id="repoInputAlt"
+              type="url"
               placeholder="https://github.com/owner/repo"
               required
             />
           </label>
           <button type="submit">Link repository</button>
-          <div id="linkStatus" class="status"></div>
+          <div id="linkStatusAlt" class="status"></div>
         </form>
       </section>
 

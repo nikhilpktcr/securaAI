@@ -2,10 +2,11 @@ const loginView = document.getElementById("loginView");
 const linkView = document.getElementById("linkView");
 const dashboardView = document.getElementById("dashboardView");
 const userSlot = document.getElementById("userSlot");
-const startFreeBtn = document.getElementById("startFreeBtn");
 const linkForm = document.getElementById("linkForm");
+const linkFormAlt = document.getElementById("linkFormAlt");
 const loginStatus = document.getElementById("loginStatus");
 const linkStatus = document.getElementById("linkStatus");
+const linkStatusAlt = document.getElementById("linkStatusAlt");
 const scanStatus = document.getElementById("scanStatus");
 const repoLabel = document.getElementById("repoLabel");
 const findingsList = document.getElementById("findingsList");
@@ -16,9 +17,9 @@ const scanBtn = document.getElementById("scanBtn");
 const relinkBtn = document.getElementById("relinkBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const repoInput = document.getElementById("repoInput");
+const repoInputAlt = document.getElementById("repoInputAlt");
 
 const SCAN_KEY = "secura_last_scan";
-const isVercelHost = /\.vercel\.app$/i.test(window.location.hostname);
 
 async function api(path, options = {}) {
   const resp = await fetch(path, {
@@ -102,22 +103,12 @@ function renderSession(session) {
     const free = /guest@secura\.ai/i.test(session.user.email);
     userSlot.textContent = free ? "Free access" : `${session.user.name} · ${session.user.email}`;
   } else {
-    userSlot.textContent = "";
+    userSlot.textContent = "Free access";
   }
 
-  if (!session) {
+  // Always keep the hero explanation visible until a repo is linked.
+  if (!session?.repo) {
     showView("login");
-    return;
-  }
-
-  if (!session.repo) {
-    showView("link");
-    const help = document.getElementById("linkHelp");
-    if (help) {
-      help.textContent = isVercelHost
-        ? "Free on Vercel: paste a public GitHub repo URL. Secura scans recent JS/TS files."
-        : "Paste a public GitHub URL, or a local git path when running npm run web.";
-    }
     return;
   }
 
@@ -132,24 +123,30 @@ function renderSession(session) {
   }
 }
 
-async function startFree() {
-  loginStatus.textContent = "Starting free session...";
+async function ensureFreeSession() {
   try {
     await api("/api/start", { method: "POST", body: "{}" });
-    const me = await api("/api/me");
-    renderSession(me);
-    loginStatus.textContent = "";
-  } catch (error) {
-    // Fallback for older deploys without /api/start
-    try {
-      await api("/api/login", { method: "POST", body: JSON.stringify({ free: true }) });
-      const me = await api("/api/me");
-      renderSession(me);
-      loginStatus.textContent = "";
-    } catch (fallbackError) {
-      loginStatus.textContent = fallbackError.message || error.message;
-    }
+  } catch (_err) {
+    await api("/api/login", { method: "POST", body: JSON.stringify({ free: true }) });
   }
+}
+
+async function linkAndScan(repoUrl, statusEl) {
+  statusEl.textContent = "Starting free scan...";
+  await ensureFreeSession();
+  await api("/api/repos/link", {
+    method: "POST",
+    body: JSON.stringify({ repo: repoUrl })
+  });
+  clearCachedScan();
+  statusEl.textContent = "Scanning repository...";
+  const result = await api("/api/scan", { method: "POST", body: "{}" });
+  setCachedScan(result.scan);
+  const me = await api("/api/me");
+  renderSession(me);
+  renderFindings(result.scan);
+  scanStatus.textContent = `Scan complete · ${result.scan.stats.open} open issue(s) · ${result.scan.stats.scanned} files`;
+  statusEl.textContent = "";
 }
 
 async function bootstrap() {
@@ -161,26 +158,29 @@ async function bootstrap() {
   }
 }
 
-startFreeBtn.addEventListener("click", () => {
-  void startFree();
-});
-
 linkForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  linkStatus.textContent = "Linking repository...";
+  const button = linkForm.querySelector("button[type='submit']");
+  if (button) button.disabled = true;
   try {
-    await api("/api/repos/link", {
-      method: "POST",
-      body: JSON.stringify({ repo: repoInput.value })
-    });
-    clearCachedScan();
-    const me = await api("/api/me");
-    renderSession(me);
-    linkStatus.textContent = "";
+    await linkAndScan(repoInput.value.trim(), linkStatus);
   } catch (error) {
     linkStatus.textContent = error.message;
+  } finally {
+    if (button) button.disabled = false;
   }
 });
+
+if (linkFormAlt) {
+  linkFormAlt.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    try {
+      await linkAndScan(repoInputAlt.value.trim(), linkStatusAlt);
+    } catch (error) {
+      linkStatusAlt.textContent = error.message;
+    }
+  });
+}
 
 scanBtn.addEventListener("click", async () => {
   scanBtn.disabled = true;
@@ -197,9 +197,15 @@ scanBtn.addEventListener("click", async () => {
   }
 });
 
-relinkBtn.addEventListener("click", () => {
+relinkBtn.addEventListener("click", async () => {
   clearCachedScan();
-  showView("link");
+  try {
+    await api("/api/logout", { method: "POST", body: "{}" });
+  } catch (_err) {
+    // Ignore logout failures; hero still works.
+  }
+  if (repoInput) repoInput.value = "";
+  renderSession(null);
 });
 
 logoutBtn.addEventListener("click", async () => {
