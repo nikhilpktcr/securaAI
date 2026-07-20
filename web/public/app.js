@@ -2,7 +2,7 @@ const loginView = document.getElementById("loginView");
 const linkView = document.getElementById("linkView");
 const dashboardView = document.getElementById("dashboardView");
 const userSlot = document.getElementById("userSlot");
-const loginForm = document.getElementById("loginForm");
+const startFreeBtn = document.getElementById("startFreeBtn");
 const linkForm = document.getElementById("linkForm");
 const loginStatus = document.getElementById("loginStatus");
 const linkStatus = document.getElementById("linkStatus");
@@ -57,7 +57,7 @@ function showView(name) {
 
 function renderFindings(scan) {
   if (!scan) {
-    findingsList.innerHTML = `<div class="empty">No scan yet. Click <strong>Scan modified files</strong>.</div>`;
+    findingsList.innerHTML = `<div class="empty">No scan yet. Click <strong>Scan repository</strong>.</div>`;
     statOpen.textContent = "0";
     statFiles.textContent = "0";
     statScore.textContent = "100";
@@ -69,7 +69,7 @@ function renderFindings(scan) {
   statScore.textContent = String(scan.stats.score);
 
   if (!scan.findings.length) {
-    findingsList.innerHTML = `<div class="empty">No security issues found in modified JS/TS files.</div>`;
+    findingsList.innerHTML = `<div class="empty">No security issues found in scanned JS/TS files.</div>`;
     return;
   }
 
@@ -98,7 +98,12 @@ function escapeHtml(value) {
 }
 
 function renderSession(session) {
-  userSlot.textContent = session?.user ? `${session.user.name} · ${session.user.email}` : "";
+  if (session?.user) {
+    const free = /guest@secura\.ai/i.test(session.user.email);
+    userSlot.textContent = free ? "Free access" : `${session.user.name} · ${session.user.email}`;
+  } else {
+    userSlot.textContent = "";
+  }
 
   if (!session) {
     showView("login");
@@ -110,8 +115,8 @@ function renderSession(session) {
     const help = document.getElementById("linkHelp");
     if (help) {
       help.textContent = isVercelHost
-        ? "On Vercel, link a public GitHub repo URL. Secura scans recently changed JS/TS files."
-        : "Locally you can use a git path via npm run web, or a GitHub URL on Vercel.";
+        ? "Free on Vercel: paste a public GitHub repo URL. Secura scans recent JS/TS files."
+        : "Paste a public GitHub URL, or a local git path when running npm run web.";
     }
     return;
   }
@@ -121,9 +126,29 @@ function renderSession(session) {
   const scan = session.lastScan || getCachedScan();
   renderFindings(scan);
   if (!scan) {
-    scanStatus.textContent = "Repository linked. Ready to scan modified files.";
+    scanStatus.textContent = "Repository linked. Ready to scan.";
   } else {
     scanStatus.textContent = `Last scan: ${new Date(scan.scannedAt).toLocaleString()}`;
+  }
+}
+
+async function startFree() {
+  loginStatus.textContent = "Starting free session...";
+  try {
+    await api("/api/start", { method: "POST", body: "{}" });
+    const me = await api("/api/me");
+    renderSession(me);
+    loginStatus.textContent = "";
+  } catch (error) {
+    // Fallback for older deploys without /api/start
+    try {
+      await api("/api/login", { method: "POST", body: JSON.stringify({ free: true }) });
+      const me = await api("/api/me");
+      renderSession(me);
+      loginStatus.textContent = "";
+    } catch (fallbackError) {
+      loginStatus.textContent = fallbackError.message || error.message;
+    }
   }
 }
 
@@ -136,22 +161,8 @@ async function bootstrap() {
   }
 }
 
-loginForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  loginStatus.textContent = "";
-  try {
-    await api("/api/login", {
-      method: "POST",
-      body: JSON.stringify({
-        email: document.getElementById("email").value,
-        password: document.getElementById("password").value
-      })
-    });
-    const me = await api("/api/me");
-    renderSession(me);
-  } catch (error) {
-    loginStatus.textContent = error.message;
-  }
+startFreeBtn.addEventListener("click", () => {
+  void startFree();
 });
 
 linkForm.addEventListener("submit", async (event) => {
@@ -173,12 +184,12 @@ linkForm.addEventListener("submit", async (event) => {
 
 scanBtn.addEventListener("click", async () => {
   scanBtn.disabled = true;
-  scanStatus.textContent = "Scanning modified files...";
+  scanStatus.textContent = "Scanning repository...";
   try {
     const result = await api("/api/scan", { method: "POST", body: "{}" });
     setCachedScan(result.scan);
     renderFindings(result.scan);
-    scanStatus.textContent = `Scan complete · ${result.scan.stats.open} open issue(s)`;
+    scanStatus.textContent = `Scan complete · ${result.scan.stats.open} open issue(s) · ${result.scan.stats.scanned} files`;
   } catch (error) {
     scanStatus.textContent = error.message;
   } finally {

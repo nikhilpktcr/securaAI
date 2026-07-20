@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Secura — Live Security Platform</title>
+    <title>Secura — Free AI Security Platform</title>
+    <meta
+      name="description"
+      content="Secura is free to use. Link a GitHub repo and scan for hardcoded secrets and high-risk security issues."
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -14,27 +18,23 @@
       </header>
 
       <section id="loginView" class="panel hero-panel">
+        <p class="free-badge">Free forever · No signup</p>
         <div class="brand">Secura<span>.</span></div>
         <h1>Security analysis for every linked repo.</h1>
-        <p>Log in, connect a repository, and Secura scans modified files for hardcoded secrets and high-risk issues.</p>
-        <form id="loginForm" class="form">
-          <label>
-            Email
-            <input id="email" type="email" value="demo@secura.ai" required />
-          </label>
-          <label>
-            Password
-            <input id="password" type="password" value="secura123" required />
-          </label>
-          <button type="submit">Enter platform</button>
-          <div id="loginStatus" class="status"></div>
-        </form>
+        <p>
+          Connect a public GitHub repository and Secura scans JS/TS files for hardcoded secrets and
+          high-risk issues — free for everyone.
+        </p>
+        <div class="hero-actions">
+          <button id="startFreeBtn" type="button">Start free</button>
+        </div>
+        <div id="loginStatus" class="status"></div>
       </section>
 
       <section id="linkView" class="panel hidden">
         <h2>Link a repository</h2>
         <p class="muted" id="linkHelp">
-          Link a GitHub repository. Secura scans recently changed JS/TS files for security issues.
+          Paste any public GitHub repo URL. Secura scans recent JS/TS files for security issues.
         </p>
         <form id="linkForm" class="form" style="max-width: 640px">
           <label>
@@ -42,7 +42,7 @@
             <input
               id="repoInput"
               type="text"
-              placeholder="https://github.com/nikhilpktcr/securaAI"
+              placeholder="https://github.com/owner/repo"
               required
             />
           </label>
@@ -71,9 +71,9 @@
               </div>
             </div>
             <div class="actions">
-              <button id="scanBtn">Scan modified files</button>
+              <button id="scanBtn">Scan repository</button>
               <button id="relinkBtn" class="secondary" type="button">Change repo</button>
-              <button id="logoutBtn" class="secondary" type="button">Log out</button>
+              <button id="logoutBtn" class="secondary" type="button">Reset</button>
             </div>
             <p id="scanStatus" class="status" style="color: var(--muted); margin-top: 14px"></p>
           </div>

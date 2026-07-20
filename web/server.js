@@ -44,6 +44,10 @@ const DEMO_USER = {
   passcode: "secura123",
   name: "Secura Demo"
 };
+const GUEST_USER = {
+  email: "guest@secura.ai",
+  name: "Free user"
+};
 
 function send(res, status, data, headers = {}) {
   const body = typeof data === "string" ? data : JSON.stringify(data);
@@ -121,8 +125,23 @@ const server = http.createServer(async (req, res) => {
       return send(res, 404, "Not found");
     }
 
-    if (req.method === "POST" && req.url === "/api/login") {
+    if (req.method === "POST" && (req.url === "/api/login" || req.url === "/api/start")) {
       const body = await readBody(req);
+      const free = body.free === true || req.url === "/api/start" || (!body.email && !body.password);
+
+      if (free) {
+        const sessionId = createSession({
+          email: GUEST_USER.email,
+          name: GUEST_USER.name
+        });
+        setSessionCookie(res, sessionId);
+        return sendJson(res, 200, {
+          ok: true,
+          free: true,
+          user: { email: GUEST_USER.email, name: GUEST_USER.name }
+        });
+      }
+
       const email = String(body.email || "").trim().toLowerCase();
       const password = String(body.password || "");
 
@@ -146,7 +165,19 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET" && req.url === "/api/me") {
       const session = getSession(req);
-      if (!session) return sendJson(res, 401, { error: "Not authenticated." });
+      if (!session) {
+        const sessionId = createSession({
+          email: GUEST_USER.email,
+          name: GUEST_USER.name
+        });
+        setSessionCookie(res, sessionId);
+        return sendJson(res, 200, {
+          free: true,
+          user: { email: GUEST_USER.email, name: GUEST_USER.name },
+          repo: null,
+          lastScan: null
+        });
+      }
       return sendJson(res, 200, publicSession(session));
     }
 

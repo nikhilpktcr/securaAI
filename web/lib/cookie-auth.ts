@@ -12,6 +12,12 @@ export const DEMO_USER = {
   name: "Secura Demo"
 };
 
+/** Free public access — no password required. */
+export const GUEST_USER = {
+  email: "guest@secura.ai",
+  name: "Free user"
+};
+
 function b64url(input: string): string {
   return Buffer.from(input)
     .toString("base64")

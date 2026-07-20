@@ -104,6 +104,31 @@ body::before {
   color: var(--muted);
 }
 
+.free-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin: 0 !important;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent) !important;
+  font-size: 0.85rem !important;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.hero-actions button {
+  min-width: 160px;
+}
+
 .form {
   display: grid;
   gap: 12px;
