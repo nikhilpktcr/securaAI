@@ -1,8 +1,8 @@
-import { detectSecrets } from "./detectors";
+import { detectSecrets, isSupportedScanPath } from "./detectors";
 import type { FindingResult, LinkedRepo, ScanResult } from "./types";
 
 function isSupportedPath(filePath: string): boolean {
-  return /\.(jsx?|tsx?)$/i.test(filePath);
+  return isSupportedScanPath(filePath);
 }
 
 export function parseGitHubRepo(input: string): { owner: string; name: string } {
@@ -63,8 +63,8 @@ function scanText(filePath: string, text: string, gitStatus: string): FindingRes
   });
 }
 
-const MAX_SCAN_FILES = 30;
-const RECENT_COMMIT_PAGES = 10;
+const MAX_SCAN_FILES = 100;
+const RECENT_COMMIT_PAGES = 20;
 
 async function listRecentChangedFiles(
   owner: string,

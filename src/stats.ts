@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { emptyProviderCounts } from "./detectors";
 import { AuditEvent, Finding, FindingSnapshot, SecuraStats } from "./types";
 
 const KEY = "secura.stats";
@@ -7,7 +8,7 @@ const blank: SecuraStats = {
   fixed: 0,
   open: 0,
   findingsBySeverity: { critical: 0, high: 0, medium: 0 },
-  findingsByProvider: { openai: 0, github: 0, aws: 0, generic: 0 },
+  findingsByProvider: emptyProviderCounts(),
   audit: []
 };
 
@@ -28,7 +29,7 @@ function withAudit(stats: SecuraStats, event?: Omit<AuditEvent, "timestamp">): S
 export async function recordScan(context: vscode.ExtensionContext, findings: FindingSnapshot[]): Promise<void> {
   const current = getStats(context);
   const findingsBySeverity: SecuraStats["findingsBySeverity"] = { critical: 0, high: 0, medium: 0 };
-  const findingsByProvider: SecuraStats["findingsByProvider"] = { openai: 0, github: 0, aws: 0, generic: 0 };
+  const findingsByProvider: SecuraStats["findingsByProvider"] = emptyProviderCounts();
 
   for (const finding of findings) {
     findingsBySeverity[finding.severity] += 1;

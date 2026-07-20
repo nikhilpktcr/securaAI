@@ -297,3 +297,79 @@ button:disabled {
   padding: 22px;
   color: var(--muted);
 }
+
+.finding-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.finding-actions button {
+  padding: 8px 14px;
+  font-size: 0.88rem;
+}
+
+.triage-panel {
+  margin-top: 12px;
+}
+
+.triage-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(216, 243, 238, 0.35);
+}
+
+.triage-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.triage-summary {
+  margin: 0 0 10px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.triage-columns {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+@media (max-width: 720px) {
+  .triage-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.triage-actions,
+.triage-context {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.triage-actions li,
+.triage-context li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.triage-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #f7fbfa;
+  font-size: 0.75rem;
+  font-weight: 700;
+}

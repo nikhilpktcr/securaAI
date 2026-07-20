@@ -20,6 +20,7 @@ const repoInput = document.getElementById("repoInput");
 const repoInputAlt = document.getElementById("repoInputAlt");
 
 const SCAN_KEY = "secura_last_scan";
+let latestFindings = [];
 
 async function api(path, options = {}) {
   const resp = await fetch(path, {
@@ -56,8 +57,96 @@ function showView(name) {
   dashboardView.classList.toggle("hidden", name !== "dashboard");
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function renderTriagePanel(result) {
+  const card = result.triage;
+  const modeLabel =
+    result.mode === "ai-fluency-llm"
+      ? "LLM enriched"
+      : result.mode === "ai-fluency-local-fallback"
+        ? "Local fallback"
+        : "Grounded local";
+
+  const actions = (card.next_actions || [])
+    .map((action, index) => `<li><span class="triage-step">${index + 1}</span>${escapeHtml(action)}</li>`)
+    .join("");
+  const context = (card.context_used || [])
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("");
+
+  return `
+    <div class="triage-card">
+      <div class="triage-top">
+        <strong>AI triage</strong>
+        <span class="chip">${escapeHtml(modeLabel)}</span>
+        <span class="chip">confidence ${escapeHtml(String(card.confidence))}</span>
+        <span class="chip">fluency ${escapeHtml(String(card.fluency_score))}</span>
+      </div>
+      <p class="triage-summary">${escapeHtml(card.summary)}</p>
+      <p><span class="muted">Intent</span><br />${escapeHtml(card.intent)}</p>
+      <p><span class="muted">Reasoning</span><br />${escapeHtml(card.reasoning)}</p>
+      <p><span class="muted">MITRE</span><br /><span class="code">${escapeHtml(card.mitre_tactic)}</span></p>
+      <p><span class="muted">Impact</span><br />${escapeHtml(card.impact)}</p>
+      <div class="triage-columns">
+        <div>
+          <p class="muted" style="margin-bottom:6px">Next actions</p>
+          <ol class="triage-actions">${actions}</ol>
+        </div>
+        <div>
+          <p class="muted" style="margin-bottom:6px">Context used</p>
+          <ul class="triage-context">${context}</ul>
+        </div>
+      </div>
+    </div>`;
+}
+
+function bindTriageButtons() {
+  findingsList.querySelectorAll("[data-triage-index]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const index = Number(button.getAttribute("data-triage-index"));
+      const finding = latestFindings[index];
+      const panel = findingsList.querySelector(`[data-triage-panel="${index}"]`);
+      if (!finding || !panel) return;
+
+      if (!panel.classList.contains("hidden") && panel.dataset.loaded === "1") {
+        panel.classList.add("hidden");
+        button.textContent = "AI triage";
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Triaging…";
+      panel.classList.remove("hidden");
+      panel.innerHTML = `<div class="triage-card muted">Building grounded triage…</div>`;
+
+      try {
+        const result = await api("/api/triage", {
+          method: "POST",
+          body: JSON.stringify({ finding })
+        });
+        panel.innerHTML = renderTriagePanel(result);
+        panel.dataset.loaded = "1";
+        button.textContent = "Hide triage";
+      } catch (error) {
+        panel.innerHTML = `<div class="triage-card status">${escapeHtml(error.message)}</div>`;
+        button.textContent = "Retry triage";
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+}
+
 function renderFindings(scan) {
   if (!scan) {
+    latestFindings = [];
     findingsList.innerHTML = `<div class="empty">No scan yet. Click <strong>Scan repository</strong>.</div>`;
     statOpen.textContent = "0";
     statFiles.textContent = "0";
@@ -65,18 +154,19 @@ function renderFindings(scan) {
     return;
   }
 
+  latestFindings = Array.isArray(scan.findings) ? scan.findings : [];
   statOpen.textContent = String(scan.stats.open);
   statFiles.textContent = String(scan.stats.scanned);
   statScore.textContent = String(scan.stats.score);
 
-  if (!scan.findings.length) {
-    findingsList.innerHTML = `<div class="empty">No security issues found in scanned JS/TS files.</div>`;
+  if (!latestFindings.length) {
+    findingsList.innerHTML = `<div class="empty">No security issues found in scanned source/config files.</div>`;
     return;
   }
 
-  findingsList.innerHTML = scan.findings
+  findingsList.innerHTML = latestFindings
     .map(
-      (item) => `
+      (item, index) => `
       <article class="finding">
         <h3>${escapeHtml(item.message)}</h3>
         <div class="meta">
@@ -85,17 +175,15 @@ function renderFindings(scan) {
         </div>
         <p class="code">${escapeHtml(item.filePath)}:${item.line}:${item.character}</p>
         <p class="muted">${escapeHtml(item.explanation)}</p>
+        <div class="finding-actions">
+          <button type="button" class="secondary" data-triage-index="${index}">AI triage</button>
+        </div>
+        <div class="triage-panel hidden" data-triage-panel="${index}"></div>
       </article>`
     )
     .join("");
-}
 
-function escapeHtml(value) {
-  return String(value || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+  bindTriageButtons();
 }
 
 function renderSession(session) {

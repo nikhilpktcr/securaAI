@@ -36,14 +36,15 @@
     ]
   },
   "scripts": {
-    "compile": "tsc -p .",
-    "watch": "tsc -watch -p .",
+    "sync:shared": "node scripts/sync-shared.cjs",
+    "compile": "npm run sync:shared && tsc -p .",
+    "watch": "npm run sync:shared && tsc -watch -p .",
     "package": "vsce package",
-    "test": "npm run compile && node --test test/**/*.test.cjs",
+    "test": "npm run compile && npm run compile:web && node --test test/**/*.test.cjs",
     "demo:triage": "node demo/triage-server.js",
     "app": "node demo/run-app.js",
     "web": "npm run compile:web && node web/server.js",
-    "compile:web": "npm install --prefix web && npm run build --prefix web",
+    "compile:web": "npm run sync:shared && npm install --prefix web && npm run build --prefix web",
     "deploy:web": "npx vercel@latest --cwd web --prod"
   },
   "devDependencies": {

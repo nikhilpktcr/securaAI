@@ -10,6 +10,7 @@ const {
 } = require("./dist/lib/session");
 const { normalizeRepoInput, ensureRemoteRepo, scanModifiedFiles } = require("./dist/lib/scan");
 const { parseGitHubRepo, scanGitHubRepo } = require("./dist/lib/github");
+const { triageFinding } = require("./dist/lib/triage");
 
 function resolvePort() {
   const args = process.argv.slice(2);
@@ -38,12 +39,6 @@ function resolvePort() {
 const PORT = resolvePort();
 const PUBLIC_DIR = path.join(__dirname, "public");
 const REPO_CACHE = path.join(__dirname, ".repos");
-const DEMO_USER = {
-  email: "demo@secura.ai",
-  // Intentionally not named "password" to avoid secret-detector false positives in this file.
-  passcode: "secura123",
-  name: "Secura Demo"
-};
 const GUEST_USER = {
   email: "guest@secura.ai",
   name: "Free user"
@@ -126,35 +121,16 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && (req.url === "/api/login" || req.url === "/api/start")) {
-      const body = await readBody(req);
-      const free = body.free === true || req.url === "/api/start" || (!body.email && !body.password);
-
-      if (free) {
-        const sessionId = createSession({
-          email: GUEST_USER.email,
-          name: GUEST_USER.name
-        });
-        setSessionCookie(res, sessionId);
-        return sendJson(res, 200, {
-          ok: true,
-          free: true,
-          user: { email: GUEST_USER.email, name: GUEST_USER.name }
-        });
-      }
-
-      const email = String(body.email || "").trim().toLowerCase();
-      const password = String(body.password || "");
-
-      if (email !== DEMO_USER.email || password !== DEMO_USER.passcode) {
-        return sendJson(res, 401, { error: "Invalid email or password." });
-      }
-
       const sessionId = createSession({
-        email: DEMO_USER.email,
-        name: DEMO_USER.name
+        email: GUEST_USER.email,
+        name: GUEST_USER.name
       });
       setSessionCookie(res, sessionId);
-      return sendJson(res, 200, { ok: true, user: { email: DEMO_USER.email, name: DEMO_USER.name } });
+      return sendJson(res, 200, {
+        ok: true,
+        free: true,
+        user: { email: GUEST_USER.email, name: GUEST_USER.name }
+      });
     }
 
     if (req.method === "POST" && req.url === "/api/logout") {
@@ -258,6 +234,19 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    if (req.method === "POST" && req.url === "/api/triage") {
+      const session = getSession(req);
+      if (!session) return sendJson(res, 401, { error: "Not authenticated." });
+
+      const body = await readBody(req);
+      if (!body.finding) {
+        return sendJson(res, 400, { error: "finding is required." });
+      }
+
+      const result = await triageFinding(body.finding);
+      return sendJson(res, 200, { ok: true, ...result });
+    }
+
     sendJson(res, 404, { error: "Not found" });
   } catch (error) {
     sendJson(res, 500, { error: error.message || "Unexpected server error." });
@@ -284,5 +273,5 @@ server.on("error", (error) => {
 
 server.listen(PORT, () => {
   console.log(`Secura web platform running at http://localhost:${PORT}`);
-  console.log(`Demo login: ${DEMO_USER.email} / ${DEMO_USER.passcode}`);
+  console.log("Free access enabled — no signup required.");
 });

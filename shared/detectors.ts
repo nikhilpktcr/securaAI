@@ -1,4 +1,3 @@
-/* Generated from shared/detectors.ts — edit shared/detectors.ts, then run: node scripts/sync-shared.cjs */
 export type SecretProvider =
   | "openai"
   | "github"

@@ -1,19 +1,7 @@
 import type * as vscode from "vscode";
+import type { SecretDetection, SecretProvider, SecretSeverity } from "./detectors";
 
-export type SecretProvider = "openai" | "github" | "aws" | "generic";
-export type SecretSeverity = "critical" | "high" | "medium";
-
-export type SecretDetection = {
-  provider: SecretProvider;
-  secretType: string;
-  severity: SecretSeverity;
-  envVarName: string;
-  value: string;
-  start: number;
-  end: number;
-  message: string;
-  explanation: string;
-};
+export type { SecretDetection, SecretProvider, SecretSeverity };
 
 export type Finding = SecretDetection & {
   document: vscode.TextDocument;

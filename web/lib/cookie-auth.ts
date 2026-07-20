@@ -6,12 +6,6 @@ const COOKIE = "secura_session";
 const SECRET = process.env.SESSION_SECRET || "secura-demo-session-secret";
 const MAX_AGE_SEC = 60 * 60 * 12;
 
-export const DEMO_USER = {
-  email: "demo@secura.ai",
-  passcode: "secura123",
-  name: "Secura Demo"
-};
-
 /** Free public access — no password required. */
 export const GUEST_USER = {
   email: "guest@secura.ai",

@@ -1,4 +1,15 @@
 {
-  "compilerOptions": { "target": "ES2022", "module": "commonjs", "lib": ["ES2022"], "outDir": "out", "rootDir": "src", "strict": true, "sourceMap": true, "esModuleInterop": true, "skipLibCheck": true },
-  "exclude": ["node_modules", ".vscode-test"]
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "outDir": "out",
+    "rootDir": "src",
+    "strict": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "web", "demo", "out", "test", "shared", "canvases"]
 }

@@ -4,6 +4,7 @@ import * as path from "node:path";
 import { promisify } from "node:util";
 import { openDashboard } from "./dashboard";
 import { applySecretFix } from "./remediation";
+import { isSupportedScanPath } from "./detectors";
 import { scanDocument } from "./scanner";
 import { getStats, recordFix, recordScan } from "./stats";
 import { Finding, FindingSnapshot } from "./types";
@@ -63,8 +64,8 @@ function activeFinding(findings: Map<string, Finding[]>): Finding | undefined {
   return findingForRange(list, editor.selection) ?? list[0];
 }
 
-function isSupportedPath(path: string): boolean {
-  return /\.(jsx?|tsx?)$/i.test(path);
+function isSupportedPath(filePath: string): boolean {
+  return isSupportedScanPath(filePath);
 }
 
 function parsePorcelainZ(stdout: string): string[] {
@@ -382,7 +383,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
 
       if (scannedCount === 0) {
-        vscode.window.showInformationMessage("No modified JS/TS files found in git status.");
+        vscode.window.showInformationMessage("No modified supported source files found in git status.");
         reportInsights("manual", 0);
         return;
       }

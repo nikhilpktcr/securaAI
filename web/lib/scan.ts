@@ -3,13 +3,13 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { promisify } from "util";
-import { detectSecrets } from "./detectors";
+import { detectSecrets, isSupportedScanPath } from "./detectors";
 import type { FindingResult, ScanResult } from "./types";
 
 const execFileAsync = promisify(execFile);
 
 function isSupportedPath(filePath: string): boolean {
-  return /\.(jsx?|tsx?)$/i.test(filePath);
+  return isSupportedScanPath(filePath);
 }
 
 function parsePorcelainZ(stdout: string): Array<{ status: string; path: string }> {
@@ -109,7 +109,7 @@ function walkSupportedFiles(
     if (isSupportedPath(rel)) {
       collected.push({ status: "TREE", path: rel.replace(/\\/g, "/") });
     }
-    if (collected.length >= 40) break;
+    if (collected.length >= 100) break;
   }
 
   return collected;
