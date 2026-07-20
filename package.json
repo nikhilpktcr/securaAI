@@ -41,6 +41,7 @@
     "watch": "npm run sync:shared && tsc -watch -p .",
     "package": "vsce package",
     "test": "npm run compile && npm run compile:web && node --test test/**/*.test.cjs",
+    "test:smoke": "npm run compile && node --test test/extension.smoke.cjs",
     "demo:triage": "node demo/triage-server.js",
     "app": "node demo/run-app.js",
     "web": "npm run compile:web && node web/server.js",
